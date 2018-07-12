@@ -484,12 +484,13 @@ Example test_subset2:              subset [1;2;2] [2;1;4;1] = false.
     requires techniques you haven't learned yet.  Feel free to ask for
     help if you get stuck! *)
 
-(*
-Theorem bag_theorem : ...
+
+(* Theorem bag_theorem : forall x : nat, forall xs : bag,
+ plus 1 (count x xs) = count x (add x xs).
 Proof.
-  ...
-Qed.
-*)
+  intros x xs.
+Qed. *)
+
 
 (** [] *)
 
@@ -577,6 +578,7 @@ Theorem app_assoc : forall l1 l2 l3 : natlist,
 Proof.
   intros l1 l2 l3. induction l1 as [| n l1' IHl1'].
   - (* l1 = nil *)
+    simpl.
     reflexivity.
   - (* l1 = cons n l1' *)
     simpl. rewrite -> IHl1'. reflexivity.  Qed.
@@ -677,6 +679,7 @@ Proof.
   (* WORKED IN CLASS *)
   intros l1 l2. induction l1 as [| n l1' IHl1'].
   - (* l1 = nil *)
+    simpl.
     reflexivity.
   - (* l1 = cons *)
     simpl. rewrite -> IHl1'. reflexivity.  Qed.
@@ -697,8 +700,9 @@ Proof.
   - (* l = nil *)
     reflexivity.
   - (* l = cons *)
-    simpl. rewrite -> app_length, plus_comm.
+    simpl. rewrite -> app_length. rewrite -> plus_comm.
     simpl. rewrite -> IHl'. reflexivity.  Qed.
+    
 
 (** For comparison, here are informal proofs of these two theorems:
 
@@ -811,19 +815,31 @@ Proof.
 Theorem app_nil_r : forall l : natlist,
   l ++ [] = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l. induction l as [| n l' IHl'].
+  - reflexivity.
+  - simpl. rewrite -> IHl'. reflexivity.
+Qed.
+  
 (* GRADE_THEOREM 0.5: NatList.app_nil_r *)
 
 Theorem rev_app_distr: forall l1 l2 : natlist,
   rev (l1 ++ l2) = rev l2 ++ rev l1.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2. induction l1 as [| n l' IHl'].
+  - simpl. rewrite -> app_nil_r. reflexivity.
+  - simpl. rewrite -> IHl'. rewrite app_assoc. reflexivity.
+Qed.
 (* GRADE_THEOREM 0.5: NatList.rev_app_distr *)
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l. induction l as [| n l' IHl'].
+  - reflexivity.
+  - simpl. rewrite -> rev_app_distr. rewrite -> IHl'. simpl. reflexivity.
+Qed.
+  
+
 (* GRADE_THEOREM 0.5: NatList.rev_involutive *)
 
 (** There is a short solution to the next one.  If you find yourself
@@ -833,7 +849,9 @@ Proof.
 Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
   l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2 l3 l4. rewrite -> app_assoc. rewrite -> app_assoc. reflexivity.
+Qed.
+
 (* GRADE_THEOREM 0.5: NatList.app_assoc4 *)
 
 (** An exercise about your implementation of [nonzeros]: *)
@@ -841,7 +859,13 @@ Proof.
 Lemma nonzeros_app : forall l1 l2 : natlist,
   nonzeros (l1 ++ l2) = (nonzeros l1) ++ (nonzeros l2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2. induction l1 as [| n l' IHl'].
+  - simpl. reflexivity.
+  - destruct n as [| n].
+    + simpl. rewrite -> IHl'. reflexivity.
+    + simpl. rewrite -> IHl'. reflexivity.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars (beq_natlist)  *)
@@ -849,25 +873,38 @@ Proof.
     lists of numbers for equality.  Prove that [beq_natlist l l]
     yields [true] for every list [l]. *)
 
-Fixpoint beq_natlist (l1 l2 : natlist) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint beq_natlist (l1 l2 : natlist) : bool :=
+  match l1, l2 with
+  | [], [] => true
+  | [], _ => false 
+  | _ , [] => false
+  | x1::xs1, x2::xs2 => match (beq_nat x1 x2) with
+                      | true => beq_natlist xs1 xs2
+                      | false => false
+                      end
+  end.
 
 Example test_beq_natlist1 :
   (beq_natlist nil nil = true).
- (* FILL IN HERE *) Admitted.
+  reflexivity. Qed.
 
 Example test_beq_natlist2 :
   beq_natlist [1;2;3] [1;2;3] = true.
-(* FILL IN HERE *) Admitted.
+  reflexivity. Qed.
 
 Example test_beq_natlist3 :
   beq_natlist [1;2;3] [1;2;4] = false.
- (* FILL IN HERE *) Admitted.
+  reflexivity. Qed.
 
 Theorem beq_natlist_refl : forall l:natlist,
   true = beq_natlist l l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l. induction l as [| n l' IHl'].
+  - simpl. reflexivity.
+  - destruct n as [| n].
+    + simpl. rewrite -> IHl'. reflexivity.
+    + simpl. rewrite <- beq_nat_refl. rewrite -> IHl'. reflexivity.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
